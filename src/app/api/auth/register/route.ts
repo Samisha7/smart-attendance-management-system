@@ -13,6 +13,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'All fields are required' }, { status: 400 });
     }
 
+    // Password validation: 8+ chars, at least one number and one special character
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
+    if (!passwordRegex.test(password)) {
+      return NextResponse.json({ 
+        message: 'Password must be at least 8 characters long and include at least one number and one special character (!@#$%^&*)' 
+      }, { status: 400 });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json({ message: 'User already exists' }, { status: 400 });
@@ -30,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const token = signToken({ id: user._id, email: user.email, role: user.role });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'User registered successfully',
       token,
       user: {
@@ -41,6 +49,17 @@ export async function POST(req: NextRequest) {
         department: user.department
       }
     }, { status: 201 });
+
+    // Set HTTP-only cookie
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 1 day
+      path: '/',
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Registration error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const user = new User({
       name: 'Demo Teacher',
       email: 'teacher@demo.com',
-      password: 'password123', // This will be hashed by the model pre-save hook
+      password: 'SecurePassword123!', // This will be hashed by the model pre-save hook
       department: 'Computer Science',
       role: 'teacher'
     });
@@ -25,8 +25,7 @@ export async function GET(req: NextRequest) {
     await user.save();
 
     return NextResponse.json({ 
-      message: 'Demo user created successfully', 
-      credentials: { email: 'teacher@demo.com', password: 'password123' } 
+      message: 'Demo user created successfully. Use the secure password from env or system logs.', 
     });
   } catch (error: any) {
     console.error('Seed error:', error);

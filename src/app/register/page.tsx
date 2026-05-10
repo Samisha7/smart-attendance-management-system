@@ -2,38 +2,54 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { GraduationCap, Mail, Lock, User, Briefcase, ArrowRight, Loader2, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function RegisterPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    department: '',
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Password validation rules
+  const passwordRules = [
+    { label: 'At least 8 characters', met: formData.password.length >= 8 },
+    { label: 'At least one number', met: /[0-9]/.test(formData.password) },
+    { label: 'At least one special character', met: /[!@#$%^&*]/.test(formData.password) },
+  ];
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if all rules are met
+    if (passwordRules.some(rule => !rule.met)) {
+      toast.error('Please meet all password requirements');
+      return;
+    }
+
     setLoading(true);
-    setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/');
+        toast.success('Registration successful! Please login.');
+        router.push('/login');
       } else {
-        setError(data.message || 'Login failed');
+        toast.error(data.message || 'Registration failed');
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -46,13 +62,26 @@ export default function LoginPage() {
           <div className="logo-icon">
             <GraduationCap size={32} />
           </div>
-          <h1>Welcome Back</h1>
-          <p>Login to manage your class attendance</p>
+          <h1>Create Account</h1>
+          <p>Join the attendance management system</p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleRegister} className="login-form">
+          <div className="input-group">
+            <label htmlFor="name">Full Name</label>
+            <div className="input-wrapper">
+              <User size={18} className="input-icon" />
+              <input 
+                type="text" 
+                id="name" 
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                required 
+              />
+            </div>
+          </div>
 
-        <form onSubmit={handleLogin} className="login-form">
           <div className="input-group">
             <label htmlFor="email">Email Address</label>
             <div className="input-wrapper">
@@ -61,8 +90,23 @@ export default function LoginPage() {
                 type="email" 
                 id="email" 
                 placeholder="teacher@school.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required 
+              />
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="department">Department</label>
+            <div className="input-wrapper">
+              <Briefcase size={18} className="input-icon" />
+              <input 
+                type="text" 
+                id="department" 
+                placeholder="e.g. Computer Science"
+                value={formData.department}
+                onChange={(e) => setFormData({...formData, department: e.target.value})}
                 required 
               />
             </div>
@@ -76,17 +120,26 @@ export default function LoginPage() {
                 type="password" 
                 id="password" 
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required 
               />
+            </div>
+            
+            <div className="password-requirements">
+              {passwordRules.map((rule, i) => (
+                <div key={i} className={`requirement ${rule.met ? 'met' : ''}`}>
+                  {rule.met ? <Check size={14} /> : <X size={14} />}
+                  <span>{rule.label}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           <button type="submit" className="login-btn" disabled={loading}>
             {loading ? <Loader2 className="spinner" size={20} /> : (
               <>
-                <span>Sign In</span>
+                <span>Sign Up</span>
                 <ArrowRight size={20} />
               </>
             )}
@@ -94,7 +147,7 @@ export default function LoginPage() {
         </form>
 
         <div className="login-footer">
-          <p>Don't have an account? <a href="/register">Create Account</a></p>
+          <p>Already have an account? <a href="/login">Sign In</a></p>
         </div>
       </div>
 
@@ -110,8 +163,8 @@ export default function LoginPage() {
 
         .login-card {
           width: 100%;
-          max-width: 440px;
-          padding: 3rem;
+          max-width: 480px;
+          padding: 2.5rem;
           background: rgba(255, 255, 255, 0.9);
           border-radius: 24px;
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -119,27 +172,27 @@ export default function LoginPage() {
 
         .login-header {
           text-align: center;
-          margin-bottom: 2.5rem;
+          margin-bottom: 2rem;
         }
 
         .logo-icon {
-          width: 64px;
-          height: 64px;
+          width: 56px;
+          height: 56px;
           background: var(--primary);
           color: white;
-          border-radius: 16px;
+          border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 0 auto 1.5rem;
-          box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+          margin: 0 auto 1rem;
+          box-shadow: 0 8px 12px -3px rgba(99, 102, 241, 0.4);
         }
 
         .login-header h1 {
-          font-size: 1.75rem;
+          font-size: 1.5rem;
           font-weight: 700;
           color: var(--text-main);
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.25rem;
         }
 
         .login-header p {
@@ -147,33 +200,24 @@ export default function LoginPage() {
           font-size: 0.875rem;
         }
 
-        .error-message {
-          background: #fee2e2;
-          color: #ef4444;
-          padding: 0.75rem 1rem;
-          border-radius: 12px;
-          font-size: 0.875rem;
-          margin-bottom: 1.5rem;
-          text-align: center;
-          border: 1px solid #fecaca;
-        }
-
         .login-form {
           display: flex;
           flex-direction: column;
-          gap: 1.25rem;
+          gap: 1rem;
         }
 
         .input-group {
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: 0.4rem;
         }
 
         .input-group label {
-          font-size: 0.875rem;
-          font-weight: 600;
+          font-size: 0.8rem;
+          font-weight: 700;
           color: var(--text-main);
+          text-transform: uppercase;
+          letter-spacing: 0.025em;
         }
 
         .input-wrapper {
@@ -204,6 +248,29 @@ export default function LoginPage() {
           box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
+        .password-requirements {
+          margin-top: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .requirement {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+        }
+
+        .requirement.met {
+          color: #10b981;
+        }
+
+        .requirement svg {
+          flex-shrink: 0;
+        }
+
         .login-btn {
           margin-top: 1rem;
           background: var(--primary);
@@ -222,11 +289,6 @@ export default function LoginPage() {
         .login-btn:hover:not(:disabled) {
           background: var(--primary-hover);
           transform: translateY(-1px);
-          box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
-        }
-
-        .login-btn:active:not(:disabled) {
-          transform: translateY(0);
         }
 
         .login-btn:disabled {
@@ -235,7 +297,7 @@ export default function LoginPage() {
         }
 
         .login-footer {
-          margin-top: 2rem;
+          margin-top: 1.5rem;
           text-align: center;
           font-size: 0.875rem;
           color: var(--text-muted);

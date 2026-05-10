@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import PageLayout from '@/components/PageLayout';
+import Skeleton from '@/components/Skeleton';
 import { 
   Users, 
   UserCheck, 
@@ -13,17 +14,25 @@ import {
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/dashboard/overview', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setStats(data.overview);
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        const [statsRes, activityRes] = await Promise.all([
+          fetch('/api/dashboard/overview', { headers }),
+          fetch('/api/dashboard/recent-activity?limit=5', { headers })
+        ]);
+
+        const statsData = await statsRes.json();
+        const activityData = await activityRes.json();
+
+        setStats(statsData.overview);
+        setRecentActivity(activityData.recentAttendance || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -82,26 +91,38 @@ export default function Dashboard() {
       </div>
 
       <div className="stats-grid">
-        {statCards.map((card, i) => {
-          const Icon = card.icon;
-          return (
-            <div key={i} className="stat-card fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className="stat-icon" style={{ backgroundColor: `${card.color}20`, color: card.color }}>
-                <Icon size={24} />
+        {loading ? (
+          [1, 2, 3, 4].map((i) => (
+            <div key={i} className="stat-card">
+              <Skeleton circle width="48px" height="48px" />
+              <div className="stat-content" style={{ width: '100%' }}>
+                <Skeleton width="60%" height="14px" className="mb-2" />
+                <Skeleton width="40%" height="24px" />
               </div>
-              <div className="stat-content">
-                <span className="stat-title">{card.title}</span>
-                <div className="stat-value-row">
-                  <span className="stat-value">{card.value}</span>
-                  <div className={`stat-trend ${card.isUp ? 'up' : 'down'}`}>
-                    {card.isUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                    <span>{card.trend}</span>
+            </div>
+          ))
+        ) : (
+          statCards.map((card, i) => {
+            const Icon = card.icon;
+            return (
+              <div key={i} className="stat-card fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="stat-icon" style={{ backgroundColor: `${card.color}20`, color: card.color }}>
+                  <Icon size={24} />
+                </div>
+                <div className="stat-content">
+                  <span className="stat-title">{card.title}</span>
+                  <div className="stat-value-row">
+                    <span className="stat-value">{card.value}</span>
+                    <div className={`stat-trend ${card.isUp ? 'up' : 'down'}`}>
+                      {card.isUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                      <span>{card.trend}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       <div className="dashboard-grid fade-in" style={{ animationDelay: '0.4s' }}>
@@ -125,15 +146,31 @@ export default function Dashboard() {
             <button className="text-btn">View All</button>
           </div>
           <div className="activity-list">
-            {[1, 2, 3, 4, 5].map((_, i) => (
-              <div key={i} className="activity-item">
-                <div className="activity-dot present"></div>
-                <div className="activity-info">
-                  <p className="activity-text"><strong>John Doe</strong> was marked present in <strong>Mathematics</strong></p>
-                  <span className="activity-time">2 hours ago</span>
+            {loading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="activity-item">
+                  <Skeleton circle width="8px" height="8px" className="mt-2" />
+                  <div className="activity-info" style={{ width: '100%' }}>
+                    <Skeleton width="100%" height="14px" className="mb-2" />
+                    <Skeleton width="30%" height="12px" />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : recentActivity.length > 0 ? (
+              recentActivity.map((activity, i) => (
+                <div key={i} className="activity-item">
+                  <div className={`activity-dot ${activity.status}`}></div>
+                  <div className="activity-info">
+                    <p className="activity-text">
+                      <strong>{activity.student?.firstName} {activity.student?.lastName}</strong> was marked <strong>{activity.status}</strong> in <strong>{activity.subject}</strong>
+                    </p>
+                    <span className="activity-time">{new Date(activity.markedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-muted text-center py-4">No recent activity today</p>
+            )}
           </div>
         </div>
       </div>
@@ -326,6 +363,8 @@ export default function Dashboard() {
 
         .activity-dot.present { background: var(--success); }
         .activity-dot.absent { background: var(--danger); }
+        .activity-dot.late { background: var(--warning); }
+        .activity-dot.excused { background: var(--info); }
 
         .activity-text {
           font-size: 0.875rem;

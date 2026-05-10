@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     const token = signToken({ id: user._id, email: user.email, role: user.role });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'Login successful',
       token,
       user: {
@@ -35,6 +35,17 @@ export async function POST(req: NextRequest) {
         department: user.department
       }
     });
+
+    // Set HTTP-only cookie
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 1 day
+      path: '/',
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
