@@ -46,8 +46,8 @@ export default function LoginPage() {
           <div className="logo-icon">
             <GraduationCap size={32} />
           </div>
-          <h1>Welcome Back</h1>
-          <p>Login to manage your class attendance</p>
+          <h1>Attendify</h1>
+          <p>The smartest way to manage class attendance</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}

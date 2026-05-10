@@ -39,7 +39,7 @@ const Sidebar = () => {
         <div className="logo-icon">
           <GraduationCap size={24} />
         </div>
-        <h1 className="logo-text">Smart Attend</h1>
+        <h1 className="logo-text">Attendify</h1>
       </div>
 
       <nav className="sidebar-nav">

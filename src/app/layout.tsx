@@ -3,8 +3,8 @@ import { Toaster } from 'sonner';
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Smart Attendance | Management System",
-  description: "Comprehensive attendance management system for educational institutions.",
+  title: "Attendify | Smart Attendance System",
+  description: "Advanced attendance management system for modern educational institutions.",
 };
 
 export default function RootLayout({

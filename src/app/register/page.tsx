@@ -62,8 +62,8 @@ export default function RegisterPage() {
           <div className="logo-icon">
             <GraduationCap size={32} />
           </div>
-          <h1>Create Account</h1>
-          <p>Join the attendance management system</p>
+          <h1>Join Attendify</h1>
+          <p>The next generation of attendance management</p>
         </div>
 
         <form onSubmit={handleRegister} className="login-form">
